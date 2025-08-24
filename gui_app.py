@@ -13,12 +13,22 @@ class NovaAnalyzerGUI:
 
         self.df = None
 
-        # Load file
-        self.load_button = tk.Button(root, text="Load Data File", command=self.load_file)
-        self.load_button.pack(pady=5)
+        # Create a Notebook (tab container)
+        notebook = ttk.Notebook(root)
+        notebook.pack(expand=True, fill="both")
+
+        # Create frames for each tab
+        tab1 = ttk.Frame(notebook)
+        tab2 = ttk.Frame(notebook)
+        tab3 = ttk.Frame(notebook)
+
+        # Add tabs
+        notebook.add(tab1, text="Data")
+        notebook.add(tab2, text="Analysis")
+        notebook.add(tab3, text="Visualization")
 
         # Column options
-        self.column_frame = tk.Frame(root)
+        self.column_frame = tk.Frame(tab2)
         self.column_frame.pack(pady=10)
 
         tk.Label(self.column_frame, text="X-axis:").grid(row=0, column=0)
@@ -29,19 +39,37 @@ class NovaAnalyzerGUI:
         self.x_column.grid(row=0, column=1, padx=5)
         self.y_column.grid(row=0, column=3, padx=5)
 
-        # Plot button
-        self.plot_button = tk.Button(root, text="Plot Graph", command=self.plot_data)
-        self.plot_button.pack(pady=5)
+        # ---------------- data tab ----------------
 
-        # Save CSV
-        self.save_button = tk.Button(root, text="Save Filtered Data to CSV", command=self.save_to_csv)
+        # Load file button
+        self.load_button = tk.Button(tab1, text="Load Data File", command=self.load_file)
+        self.load_button.pack(pady=5)
+
+        # Save CSV button
+        self.save_button = tk.Button(tab1, text="Save Filtered Data to CSV", command=self.save_to_csv)
         self.save_button.pack(pady=5)
 
+        # Save h5 button
+        self.save_h5_button = tk.Button(tab1, text="Save Filtered Data to H5", command=self.save_to_h5)
+        self.save_h5_button.pack(pady=5)
+
+        # Save parquet (snappy) button
+        self.save_parquet_button = tk.Button(tab1, text="Save Filtered Data to Parquet", command=self.save_to_parquet)
+        self.save_parquet_button.pack(pady=5)
+
+        # ---------------- Analysis tab ----------------
+
+        # Plot button
+        self.plot_button = tk.Button(tab2, text="Plot Graph", command=self.plot_data)
+        self.plot_button.pack(pady=5)
+
         # Plot area
-        self.plot_frame = tk.Frame(root)
+        self.plot_frame = tk.Frame(tab2)
         self.plot_frame.pack(fill=tk.BOTH, expand=True)
 
-    def load_file(self):  # ✅ Indented into the class
+        # ---------------- Visualization tab ----------------
+
+    def load_file(self):  # Indented into the class
         choice = messagebox.askquestion("Load Mode", "Do you want to select a directory?\nClick 'Yes' for directory, 'No' for multiple files.")
 
         all_files = []
@@ -78,7 +106,32 @@ class NovaAnalyzerGUI:
             messagebox.showinfo("Success", f"Loaded {len(all_files)} files. {len(self.df)} rows total.")
         except Exception as e:
             messagebox.showerror("Error Loading Files", str(e))
-
+    
+    def save_to_h5(self):
+        if self.df is None:
+            messagebox.showwarning("No Data", "Load data before saving.")
+            return
+        path = filedialog.asksaveasfilename(defaultextension=".h5",
+                                             filetypes=[("H5 files", "*.h5")])
+        if path:
+            try:
+                self.df.to_hdf(path, key='df', mode='w')
+                messagebox.showinfo("Saved", f"Data saved to {path}")
+            except Exception as e:
+                messagebox.showerror("Save Error", str(e))
+    
+    def save_to_parquet(self):
+        if self.df is None:
+            messagebox.showwarning("No Data", "Load data before saving.")
+            return
+        path = filedialog.asksaveasfilename(defaultextension=".parquet",
+                                             filetypes=[("Parquet files", "*.parquet")])
+        if path:
+            try:
+                self.df.to_parquet(path, index=False)
+                messagebox.showinfo("Saved", f"Data saved to {path}")
+            except Exception as e:
+                messagebox.showerror("Save Error", str(e))
 
     def plot_data(self):
         if self.df is None:
